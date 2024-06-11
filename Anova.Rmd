@@ -1,0 +1,31 @@
+---
+title: "Anova analysis"
+author: "Deseq2"
+date: "2024-06-11"
+output: html_document
+---
+```{python}
+import pandas as pd
+from scipy.stats import f_oneway
+
+file_paths = ['/content/Naive.csv', '/content/Nash_ref.csv', '/content/Rosavin + zbiotics.csv', '/content/Rosavin.csv', '/content/zbiotic.csv']
+anova_results = []
+import numpy as np
+
+for file_path in file_paths:
+    data = pd.read_csv(file_path)
+    for genus_name in data['genus'].unique():
+        subset_data = data[data['genus'] == genus_name]['Size']
+        group_data = [subset_data, np.zeros_like(subset_data)]
+        f_stat, p_val = f_oneway(*group_data)
+        significance = "Significant" if p_val < 0.05 else "Not Significant"
+        anova_results.append((file_path, genus_name, f_stat, p_val, significance))
+        
+# anova_results now contains the ANOVA results for each file and genus
+anova_results_df = pd.DataFrame(anova_results, columns=['File', 'Genus', 'F-statistic', 'P-value', 'Significance'])
+
+print(anova_results_df)
+anova_results_df.to_csv('/content/anova.csv', index=False)
+
+```
+

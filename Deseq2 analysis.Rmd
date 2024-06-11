@@ -1,0 +1,206 @@
+---
+title: "Deseq2 analysis"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-06-11"
+---
+```{r}
+# Load necessary libraries
+library(tibble)
+library(DESeq2)
+
+
+```
+
+```{r}
+
+r33 <- read.csv("Rosavin_033_20rosavin.metascope_id.csv")
+r34 <- read.csv("Rosavin_034_20rosavin.metascope_id.csv")
+z29 <- read.csv("Zbiotic_029_0.metascope_id.csv")
+z31 <- read.csv("Zbiotic_031_0.metascope_id.csv")
+```
+
+```{r}
+# Create a list of the first columns (IDs) from each data frame
+lst17 <- list(r33[,1], r34[,1], z29[,1], z31[,1])
+
+```
+
+```{r}
+# Define object names
+objnames <- c("r33", "r34", "z29", "z31")
+
+```
+
+```{r}
+# Find the intersection of IDs across all samples
+intsct <- Reduce(intersect, lst17)
+```
+
+```{r}
+# Set row names to the IDs for easy access later
+rownames(r33) <- r33[,1]
+rownames(r34) <- r34[,1]
+rownames(z29) <- z29[,1]
+rownames(z31) <- z31[,1]
+```
+
+
+```{r}
+# Access the third column (counts) for intersected IDs
+r33_counts <- r33[intsct, 3]
+r34_counts <- r34[intsct, 3]
+z29_counts <- z29[intsct, 3]
+z31_counts <- z31[intsct, 3]
+```
+
+
+```{r}
+# Create a matrix of intersected IDs
+mxt <- matrix(intsct, nrow = length(intsct), ncol = 1)
+
+```
+
+```{r}
+# Create a data frame with counts for intersected IDs
+counts <- data.frame(intsct, r33_counts, r34_counts, z29_counts, z31_counts)
+```
+
+
+```{r}
+# Set row names to the intersected IDs
+rownames(counts) <- intsct
+```
+
+
+```{r}
+# Remove the first column (IDs) as it's now the row names
+counts <- counts[, -1]
+```
+
+```{r}
+# Set column names to the object names
+colnames(counts) <- objnames
+
+```
+```{r}
+# Remove columns with NA column names (if any)
+counts <- counts[, !is.na(colnames(counts))]
+```
+
+```{r}
+# Print column names to verify
+print(colnames(counts))
+
+# Create a sample information data frame
+sampleinfo <- data.frame(objnames, "Group")
+rownames(sampleinfo) <- objnames
+
+```
+
+
+```{r}
+# Set unique group information for each sample
+sampleinfo["r33", 2] <- unique(r33[, 7])
+sampleinfo["r34", 2] <- unique(r34[, 7])
+sampleinfo["z29", 2] <- unique(z29[, 7])
+sampleinfo["z31", 2] <- unique(z31[, 7])
+```
+
+```{r}
+
+# Check dimensions of sampleinfo
+dim(sampleinfo)
+# Assign group names manually
+sampleinfo["r33", "group"] <- "Rosavin"
+sampleinfo["r34", "group"] <- "Rosavin"
+sampleinfo["z29", "group"] <- "Zbiotic"
+sampleinfo["z31", "group"] <- "Zbiotic"
+
+```
+
+```{r}
+# Set column names for sampleinfo
+colnames(sampleinfo) <- c("samplename", "groups", "group")
+
+# Remove the second column (redundant)
+i <- sampleinfo[, -2]
+print(i)
+
+# Set column names
+colnames(i) <- c("samplename", "group")
+
+# Convert to factors
+i$samplename <- factor(i$samplename)
+i$group <- factor(i$group)
+
+# Check if column names in counts match row names in sampleinfo
+all(colnames(counts) == rownames(i))
+
+# Create DESeq2 dataset
+meta.deseq2Datta <- DESeqDataSetFromMatrix(countData = counts, colData = i, design = ~ group)
+
+# Run DESeq2 analysis
+deseq2Data <- DESeq(meta.deseq2Datta)
+
+# Extract results
+deseq2Resultss <- results(deseq2Data)
+summary(deseq2Resultss)
+```
+
+
+```{r}
+# Plot MA plot
+plotMA(deseq2Resultss)
+
+# Load additional libraries for plotting
+library(ggplot2)
+library(scales) # needed for oob parameter
+library(viridis)
+
+# Coerce DESeq2 results to a data frame
+deseq2ResDFs <- as.data.frame(deseq2Resultss)
+
+# Examine the data frame
+head(deseq2ResDFs)
+
+# Set a boolean column for significance
+deseq2ResDFs$significant <- ifelse(deseq2ResDFs$padj < 0.05, "Significant", NA)
+
+# Create a ggplot of log2 fold change vs base mean
+ggplot(deseq2ResDFs, aes(baseMean, log2FoldChange, colour = significant)) + 
+  geom_point(size = 1) + 
+  scale_y_continuous(limits = c(-3, 3), oob = squish) + 
+  scale_x_log10() + 
+  geom_hline(yintercept = 0, colour = "tomato1", size = 2) + 
+  labs(x = "mean of normalized counts", y = "log fold change") + 
+  scale_colour_manual(name = "q-value", values = c("Significant" = "red"), na.value = "grey50") + 
+  theme_bw()
+```
+
+
+```{r}
+# Save DESeq2 results to CSV
+deseqresults <- "~/Downloads/metascope/Metascope_Output/deseqrosavin20vszbiotic0.5_results.csv"
+write.csv(deseq2ResDFs, deseqresults)
+
+# Read in the results CSV
+ids <- read.csv("deseqrosavin20vszbiotic0.5_results.csv")
+
+# Create a data frame with counts for intersected IDs
+counts <- data.frame(ids, r33[intsct, 3], r34[intsct, 3], z29[intsct, 3], z31[intsct, 3])
+
+# Save counts to CSV
+deseqresults <- "~/Downloads/metascope/Metascope_Output/deseqrosavin20vszbiotic0.5_conts.csv"
+write.csv(counts, deseqresults)
+
+# Create a data frame with genome data for intersected IDs
+genome <- data.frame(ids, r33[intsct, 2], r34[intsct, 2], z29[intsct, 2], z31[intsct, 2])
+
+# Save genome data to CSV
+deseqresults <- "~/Downloads/metascope/Metascope_Output/deseqrosavin20vszbiotic0.5_genome.csv"
+write.csv(genome, deseqresults)
+
+```
+
