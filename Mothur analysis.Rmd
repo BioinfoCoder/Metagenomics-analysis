@@ -1,0 +1,86 @@
+---
+title: "Mothur analysis"
+author: "Deseq2"
+date: "2024-06-11"
+output: html_document
+---
+```{bash}
+# Step 1: Trim sequences in the FASTA file
+trim.seqs(fasta=Zbiotics 0.5 ml_054.fasta)
+# Trims the sequences based on quality criteria.
+
+# Step 2: Generate a summary of the trimmed sequences
+summary.seqs(fasta=Zbiotics 1 ml_056.trim.fasta)
+# Provides summary statistics of the sequences in the specified FASTA file.
+
+# Step 3: Merge multiple trimmed FASTA files into one
+merge.files(input=Rosavin 10 mg_061.trim.fasta-Rosavin 20 mg_017.trim.fasta-Rosavin 30 mg_051.trim.fasta, output=Rosavin.trim.fasta)
+# Merges multiple sequence files into a single file.
+
+# Step 4: Create a group file for merged sequences
+make.group(fasta=Rosavin + zbiotics_047.trim.fasta, groups=Rosavin + zbiotic)
+# Generates a group file linking each sequence to its respective sample.
+
+# Step 5: Identify unique sequences
+unique.seqs(fasta=Rosavin + zbiotics_047.trim.fasta)
+# Identifies unique sequences from the input FASTA file.
+
+# Step 6: Align unique sequences to a reference database
+align.seqs(fasta=Rosavin + zbiotics_047.trim.unique.fasta, reference=silva.v4.fasta)
+# Aligns the sequences to the reference alignment database (SILVA in this case).
+
+# Step 7: Generate a summary of the aligned sequences
+summary.seqs(fasta=zbiotic.trim.unique.align, count=zbiotic.trim.count_table)
+# Provides summary statistics of the aligned sequences.
+
+# Step 8: Screen sequences based on alignment
+screen.seqs(fasta=zbiotic.trim.unique.align, count=zbiotic.trim.count_table)
+# Screens the aligned sequences to remove sequences that do not meet quality criteria.
+
+# Step 9: Filter aligned sequences
+filter.seqs(fasta=Naive_026.trim.unique.good.align)
+# Filters the sequences to remove columns with only gaps.
+
+# Step 10: Identify unique sequences again after filtering
+unique.seqs(fasta=Naive_026.trim.unique.good.filter.fasta, count=Naive_026.trim.good.count_table)
+# Identifies unique sequences from the filtered alignment.
+
+# Step 11: Pre-cluster sequences to further reduce redundancy
+pre.cluster(fasta=Naive_026.trim.unique.good.filter.unique.fasta, count=Naive_026.trim.unique.good.filter.count_table, diffs=2)
+# Pre-clusters sequences allowing up to 2 differences to reduce redundancy.
+
+# Step 12: Classify sequences using a reference taxonomy
+classify.seqs(fasta=Naive_026.trim.unique.good.filter.unique.fasta, count=Naive_026.trim.unique.good.filter.count_table, method=knn, numwanted=1, reference=trainset19_072023.pds.fasta, taxonomy=trainset19_072023.pds.tax)
+# Classifies sequences based on the reference taxonomy using the k-nearest neighbors method.
+
+# Step 13: Create a shared file from the count table
+make.shared(count=Naive_026.trim.unique.good.filter.count_table)
+# Creates a shared file for downstream community analysis.
+
+# Step 14: Classify OTUs
+classify.otu(list=Naive_026.trim.unique.good.filter.mothurGroup.asv.list, count=Naive_026.trim.unique.good.filter.mothurGroup.count_table, taxonomy=Naive_026.trim.unique.good.filter.unique.pds.knn.taxonomy, label=ASV)
+# Classifies OTUs based on the provided taxonomy file.
+
+# Beta diversity analysis for OTUs
+
+# Step 15: Calculate Shannon and Simpson diversity indices
+summary.single(shared=Rosavin.trim.unique.good.filter.mothurGroup.asv.shared, calc=shannon-simpson)
+# Calculates Shannon and Simpson diversity indices for the OTUs.
+
+# Step 16: Calculate ACE and Chao richness estimates
+summary.single(shared=Rosavin.trim.unique.good.filter.mothurGroup.asv.shared, calc=ace-chao)
+# Calculates ACE and Chao richness estimates for the OTUs.
+
+# Alpha diversity analysis for OTUs
+
+# Step 17: Generate rarefaction curve
+rarefaction.single(shared=Rosavin.trim.unique.good.filter.mothurGroup.asv.shared, calc=sobs, freq=100)
+# Generates a rarefaction curve to assess species richness at different sampling depths.
+
+# Step 18: Summarize alpha diversity indices
+summary.single(shared=Rosavin.trim.unique.good.filter.mothurGroup.asv.shared, calc=nseqs-coverage-sobs-invsimpson, subsample=T)
+# Summarizes various alpha diversity indices including observed species (sobs), inverse Simpson, and others, with subsampling.
+
+
+```
+
