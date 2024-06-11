@@ -1,0 +1,65 @@
+---
+title: "Heat map"
+author: "Deseq2"
+date: "2024-06-11"
+output: html_document
+---
+```{r}
+# Load required libraries
+library(ggplot2)
+library(reshape2)
+
+# Read in data in download set the working directory 
+data <- read.csv("count2(1).csv")
+
+# Melt data into tall format 
+melted <- melt(data, id.vars = c("genome", "'diabetic','naive','rosavin','zbiotic'"), 
+               measure.vars = c("diabetic",	"naive","rosavin","zbiotic"
+
+))
+melted$value <- as.numeric(as.character(melted$value))
+# Create heat map
+library(ggplot2)
+
+# Assuming 'melted' is your data frame
+
+library(ggplot2)
+
+library(ggplot2)
+library(viridis)
+
+# Assuming 'melted' is your data frame
+
+ggplot(melted, aes(genome,'diabetic','naive','rosavin','zbiotic' , fill = value)) + 
+  geom_tile(color = "white", size = 0.2) +  # Adding white borders to tiles
+  scale_fill_viridis_c() +  # Using the viridis color scale
+  labs(x = "sigGenes", y = "genome", fill = "Numeric Data") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotating x-axis labels for better readability
+    panel.spacing = unit(2, "lines"),  # Increasing vertical spacing between panels
+    legend.position = "right",  # Moving the legend to the right side
+    legend.spacing.y = unit(0.2, "cm")  # Adjusting vertical spacing in the legend
+  )
+
+library(reshape2)
+
+melted <- melt(data, id.vars="genome", 
+               measure.vars = c("diabetic", "naive", "rosavin", "zbiotic")) 
+
+library(ggplot2)
+
+# Assuming 'melted' is your data frame
+ggplot(melted, aes(variable, genome, fill = value)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "YlGnBu") +  # Change the color scale to YlGnBu
+  labs(x = "Group",   
+       y = "Genome",
+       fill = "Abundance",
+       title = "Abundance of Genomes") +  # Add a title
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+
+```
+

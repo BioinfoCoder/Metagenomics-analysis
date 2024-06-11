@@ -1,0 +1,58 @@
+---
+title: "Correlation"
+author: "Deseq2"
+date: "2024-06-11"
+output: html_document
+---
+```{r}
+# Install and load required libraries
+install.packages("corrplot")
+df<-read.csv("correlation_shit.csv")
+library(corrplot)
+# Assuming your data frame is named 'df'
+# Replace the column names as per your dataset
+variables <- c("STING1_L","STING1_A",	"CHUK_L","CHUK_A","NFKB1 _L","NFKB1_A","miR_1976_L",
+               "miR_1976_A","RP4_605O3.4_L","RP4_605O3.4_A","FBG","Insulin",
+               "HOMA_IR","Total_Cholesterol",
+               "Triglycerides","LDL_C","HDL_C","AST",
+               "ALT","Creat","BUN","ACR",
+               "IL_6","TNF_α",
+               "Prevotellaceae","Klebsiella","Lactobacillus","Vibrio","Bacteroides")
+
+colnames(df)<-variables
+# Add all your variable names here
+dim(df)
+# Calculate Spearman correlation matrix
+cor_matrix <- cor(df[,variables], method = "pearson")
+# Assign average ranks to handle tied values
+
+
+# Print the result
+print(result)
+# Create an empty data frame to store the results
+cor_test_results <- data.frame(Variable1 = character(), Variable2 = character(), p_value = numeric(), stringsAsFactors = FALSE)
+
+# Loop through all pairs of variables
+for (i in 1:(length(variables)-1)) {
+  for (j in (i+1):length(variables)) {
+    # Perform Spearman correlation test
+    cor_test_result <- cor.test(df[[variables[i]]], df[[variables[j]]], method = "pearson")
+    
+    # Store the results in the data frame
+    cor_test_results <- rbind(cor_test_results, data.frame(
+      Variable1 = variables[i],
+      Variable2 = variables[j],
+      p_value = cor_test_result$p.value
+    ))
+  }
+}
+
+# Print the correlation test results
+print(cor_test_results)
+deseqresults<-"~/Downloads/metascope/Metascope_Output/correlation_pvalue.csv"
+write.csv(cor_test_results,deseqresults)
+deseqresults<-"~/Downloads/metascope/Metascope_Output/correlation_resul.csv"
+write.csv(cor_test_results,deseqresults)
+
+```
+

@@ -1,0 +1,66 @@
+---
+title: "Correlation with astrics heat map"
+author: "Deseq2"
+date: "2024-06-11"
+output: html_document
+---
+```{r}
+# Assuming correlation_results is your correlation matrix
+# correlation_pvalue is your matrix of correlation p-values
+
+# Specify significant positions
+significant_positions <- which(correlation_pvalue < 0.05, arr.ind = TRUE)
+correlation_pvalue
+# Create the correlation plot
+corrplot(
+  correlation_results,
+  method = "color",
+  col = colors,
+  tl.col = "black",
+  tl.srt = 45,
+  pch.cex = 2.0,
+  diag = FALSE,
+  tl.cex = 0.8,  
+  cl.pos = "n",
+  cl.cex = 0.8
+)
+
+# # Assuming 'correlation_pvalue' is your matrix
+y = which(correlation_pvalue < 0.05, arr.ind = TRUE)
+##########################################################################
+labs.function = function(x){
+  case_when(x >= 0.05 ~ "",
+            x < 0.05  ~ "*")
+}
+p.labs =correlation_pvalue  %>%                      
+  mutate_all(labs.function)
+p.labs$Var1= as.factor(rownames(p.labs))
+p.labs = melt(p.labs, id.vars = "Var1", variable.name = "Var2", value.name = "lab")
+# Subsetting asteriks matrix to only those rows within ggcorrplot data
+p.labs$in.df = ifelse(is.na(match(paste0(p.labs$Var1, p.labs$Var2), 
+                                  paste0(cor.plot[["data"]]$Var1, cor.plot[["data"]]$Var2))),
+                      "No", "Yes")
+cor.plot <- ggcorrplot(correlation_results) +
+  coord_flip()
+
+p.labs = select(filter(p.labs, in.df == "Yes"), -in.df)
+cor.plot.labs = cor.plot + 
+  geom_text(aes(x = p.labs$Var1, 
+                y = p.labs$Var2), 
+            label = p.labs$lab, 
+            nudge_y = 0.25, 
+            size = 5)
+text(
+  x = which(correlation_pvalue < 0.05, arr.ind = TRUE)[,2],
+  y = which(correlation_pvalue <0.05, arr.ind = TRUE)[,1],
+  labels = "*",
+  col = "white",
+  cex = 1.5
+)
+
+
+
+
+
+```
+
